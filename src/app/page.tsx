@@ -13,7 +13,7 @@ async function getCasamentoData() {
   const { data: config } = await supabase
     .from("configuracoes")
     .select("*")
-    .single();
+    .maybeSingle();
 
   const { data: presentes } = await supabase
     .from("presentes")
@@ -29,6 +29,7 @@ async function getCasamentoData() {
 export default async function Home() {
   const { config, presentes } = await getCasamentoData();
 
+  // Adicionando a lógica de cores de volta para o botão funcionar
   const themeStyles = {
     "--color-primary": config.cor_principal || "#3b5336",
     "--color-secondary": config.cor_secundaria || "#fdfcf9",
@@ -43,11 +44,14 @@ export default async function Home() {
           nomeNoiva={config.nome_noiva} 
           nomeNoivo={config.nome_noivo} 
           dataCasamento={config.data_casamento} 
+          imagemHero={config.imagem_hero} 
         />
-        <Story />
+        <Story config={config} />
         <Details config={config} />
         <Gifts presentesIniciais={presentes} />
-        <RsvpForm />
+        <div id="rsvp">
+          <RsvpForm />
+        </div>
         <Mural />
       </main>
     </div>
