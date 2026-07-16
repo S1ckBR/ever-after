@@ -5,6 +5,7 @@ import Details from "@/components/public/Details";
 import Gifts from "@/components/public/Gifts";
 import RsvpForm from "@/components/public/RsvpForm";
 import Mural from "@/components/public/Mural";
+import Footer from "@/components/public/Footer";
 import { supabase } from "@/lib/supabase";
 
 export const revalidate = 0;
@@ -52,6 +53,7 @@ export default async function Home() {
           <RsvpForm dataLimiteRsvp={config.data_limite_rsvp} />
         </div>
         <Mural />
+        <Footer />
       </main>
     </div>
   );
