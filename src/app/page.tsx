@@ -29,7 +29,6 @@ async function getCasamentoData() {
 export default async function Home() {
   const { config, presentes } = await getCasamentoData();
 
-  // Adicionando a lógica de cores de volta para o botão funcionar
   const themeStyles = {
     "--color-primary": config.cor_principal || "#3b5336",
     "--color-secondary": config.cor_secundaria || "#fdfcf9",
@@ -50,7 +49,7 @@ export default async function Home() {
         <Details config={config} />
         <Gifts presentesIniciais={presentes} />
         <div id="rsvp">
-          <RsvpForm />
+          <RsvpForm dataLimiteRsvp={config.data_limite_rsvp} />
         </div>
         <Mural />
       </main>

@@ -3,10 +3,15 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, Users, Phone, MapPin, UserPlus } from "lucide-react";
+import { CalendarCheck, Users, Phone, MapPin, UserPlus, CheckCircle2, XCircle } from "lucide-react";
 
-export default function RsvpForm() {
+interface RsvpFormProps {
+  dataLimiteRsvp?: string;
+}
+
+export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
   const [form, setForm] = useState({
     nome_completo: "",
     telefone: "",
@@ -17,6 +22,21 @@ export default function RsvpForm() {
     nomes_acompanhantes: "", // Texto contendo os nomes dos acompanhantes
   });
 
+  // Formata a data limite (ex: "2026-10-21") sem sofrer influência do fuso horário
+  const formatarDataLimite = (data?: string) => {
+    if (!data) return null;
+    const datePart = data.includes("T") ? data.split("T")[0] : data;
+    const [year, month, day] = datePart.split("-").map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(year, month - 1, day).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const dataLimiteFormatada = formatarDataLimite(dataLimiteRsvp);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -25,6 +45,7 @@ export default function RsvpForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFeedback(null);
 
     try {
       // Verifica se há acompanhantes de fato com base na quantidade informada
@@ -43,7 +64,14 @@ export default function RsvpForm() {
 
       if (error) throw error;
 
-      alert("Presença confirmada com sucesso! Muito obrigado.");
+      setFeedback({
+        tipo: "sucesso",
+        mensagem:
+          form.status === "confirmado"
+            ? "Presença confirmada com sucesso! Mal podemos esperar para celebrar com você."
+            : "Recebemos sua resposta. Sentiremos sua falta, obrigado por avisar!",
+      });
+
       setForm({
         nome_completo: "",
         telefone: "",
@@ -55,7 +83,10 @@ export default function RsvpForm() {
       });
     } catch (err) {
       console.error(err);
-      alert("Erro ao enviar confirmação. Tente novamente.");
+      setFeedback({
+        tipo: "erro",
+        mensagem: "Não foi possível enviar sua confirmação. Por favor, tente novamente em instantes.",
+      });
     } finally {
       setLoading(false);
     }
@@ -75,11 +106,30 @@ export default function RsvpForm() {
           <h2 className="font-serif text-3xl font-light text-[#3b5336]">
             Confirme sua Presença
           </h2>
-          <p className="text-xs text-[#607d5b] font-serif italic">
-            Por favor, confirme sua presença até o dia 21 de Outubro de 2026.
-          </p>
+          {dataLimiteFormatada && (
+            <p className="text-xs text-[#607d5b] font-serif italic">
+              Por favor, confirme sua presença até o dia {dataLimiteFormatada}.
+            </p>
+          )}
           <div className="h-[1px] w-16 bg-[#a3b899] mx-auto mt-4" />
         </div>
+
+        {feedback && (
+          <div
+            className={`mb-6 p-4 border flex items-start gap-3 text-sm ${
+              feedback.tipo === "sucesso"
+                ? "bg-[#f0f5ee] border-[#a3b899] text-[#3b5336]"
+                : "bg-[#fdf2f2] border-[#e3a3a3] text-[#7a2e2e]"
+            }`}
+          >
+            {feedback.tipo === "sucesso" ? (
+              <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+            ) : (
+              <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            )}
+            <p>{feedback.mensagem}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-white border border-[#e1e9dc] p-8 shadow-sm space-y-5">
           <div className="space-y-1.5">

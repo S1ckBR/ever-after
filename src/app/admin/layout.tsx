@@ -32,12 +32,12 @@ export default function AdminLayout({
     },
     {
       label: "Cerimônia & Festa",
-      href: "/admin/evento", // Ajustado para a pasta física correta que você tem no VS Code
+      href: "/admin/evento",
       icon: MapPin,
     },
     {
       label: "Confirmações RSVP",
-      href: "/admin/rsvp", // Link para a nova tela de RSVP
+      href: "/admin/rsvp",
       icon: Users,
     },
     {
@@ -54,7 +54,6 @@ export default function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-[#fcfdfc]">
-      {/* Sidebar / Menu Lateral */}
       <aside className="w-64 bg-white border-r border-[#e1e9dc] flex flex-col shrink-0">
         <div className="p-6 border-b border-[#f4f6f3]">
           <h1 className="font-serif text-lg text-[#3b5336] flex items-center gap-2 font-semibold">
@@ -95,7 +94,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Conteúdo Principal da Página */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           {children}

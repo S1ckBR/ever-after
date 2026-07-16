@@ -12,7 +12,8 @@ interface StoryProps {
 
 export default function Story({ config }: StoryProps) {
   return (
-    <section id="historia" className="py-20 bg-white">
+    // Fundo alterado para #F5F1E8 usando a sintaxe de valor arbitrário do Tailwind
+    <section id="historia" className="py-20 bg-[#F5F1E8]">
       <div className="mx-auto max-w-6xl px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           
@@ -30,7 +31,8 @@ export default function Story({ config }: StoryProps) {
           <div className="space-y-6">
             <h2 className="font-serif text-3xl text-[#3b5336]">Nossa História</h2>
             <div className="prose prose-stone text-[#607d5b]">
-              <p className="font-serif leading-relaxed">
+              {/* Formatação mantida com whitespace-pre-line e text-justify */}
+              <p className="font-serif leading-relaxed whitespace-pre-line text-justify">
                 {config.texto_historia || "Conte um pouco sobre como vocês se conheceram e a trajetória até aqui..."}
               </p>
             </div>

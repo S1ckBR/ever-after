@@ -15,6 +15,7 @@ export default function AdminConfiguracoes() {
     nome_noiva: "",
     nome_noivo: "",
     data_casamento: "",
+    data_limite_rsvp: "",
     local_cerimonia: "",
     hora_cerimonia: "",
     local_recepcao: "",
@@ -42,6 +43,7 @@ export default function AdminConfiguracoes() {
           nome_noiva: data.nome_noiva || "",
           nome_noivo: data.nome_noivo || "",
           data_casamento: data.data_casamento || "",
+          data_limite_rsvp: data.data_limite_rsvp || "",
           local_cerimonia: data.local_cerimonia || "",
           hora_cerimonia: data.hora_cerimonia || "",
           local_recepcao: data.local_recepcao || "",
@@ -108,6 +110,7 @@ export default function AdminConfiguracoes() {
         nome_noiva: config.nome_noiva,
         nome_noivo: config.nome_noivo,
         data_casamento: config.data_casamento,
+        data_limite_rsvp: config.data_limite_rsvp || null,
         local_cerimonia: config.local_cerimonia,
         hora_cerimonia: config.hora_cerimonia,
         local_recepcao: config.local_recepcao,
@@ -206,6 +209,13 @@ export default function AdminConfiguracoes() {
                   <div className="space-y-1.5"><label className="text-xs uppercase text-[#607d5b]">Data</label><input type="date" name="data_casamento" value={config.data_casamento} onChange={handleChange} className="w-full text-sm border p-3 rounded-none" /></div>
                   <div className="space-y-1.5"><label className="text-xs uppercase text-[#607d5b]">Hora Cerimônia</label><input type="time" name="hora_cerimonia" value={config.hora_cerimonia} onChange={handleChange} className="w-full text-sm border p-3 rounded-none" /></div>
                   <div className="space-y-1.5"><label className="text-xs uppercase text-[#607d5b]">Hora Recepção</label><input type="time" name="hora_recepcao" value={config.hora_recepcao} onChange={handleChange} className="w-full text-sm border p-3 rounded-none" /></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-[#f4f6f3]">
+                  <div className="space-y-1.5">
+                    <label className="text-xs uppercase text-[#607d5b]">Prazo para Confirmação (RSVP)</label>
+                    <input type="date" name="data_limite_rsvp" value={config.data_limite_rsvp} onChange={handleChange} className="w-full text-sm border p-3 rounded-none" />
+                    <p className="text-[10px] text-[#607d5b] italic">Essa é a data limite mostrada aos convidados para confirmarem presença.</p>
+                  </div>
                 </div>
             </CardContent>
           </Card>

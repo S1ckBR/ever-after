@@ -52,13 +52,13 @@ export default function Countdown({ targetDate }: CountdownProps) {
   ];
 
   return (
-    <div className="flex justify-center items-center space-x-6 md:space-x-12 bg-white/40 backdrop-blur-sm border border-[#e1e9dc] p-6 max-w-lg mx-auto md:shadow-sm">
+    <div className="flex justify-between md:justify-around items-center">
       {items.map((item, idx) => (
-        <div key={idx} className="text-center min-w-[60px]">
-          <span className="block font-serif text-3xl md:text-4xl font-light text-[#3b5336]">
+        <div key={idx} className="text-center min-w-[50px] md:min-w-[70px]">
+          <span className="block font-serif text-2xl md:text-4xl font-light text-[#3b5336]">
             {item.value}
           </span>
-          <span className="block text-[10px] uppercase tracking-widest text-[#607d5b] mt-1">
+          <span className="block text-[9px] md:text-[10px] uppercase tracking-widest text-[#607d5b] mt-1">
             {item.label}
           </span>
         </div>
