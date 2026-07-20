@@ -7,6 +7,7 @@ import { X, CreditCard, ArrowRight } from "lucide-react";
 interface Presente {
   id: string;
   nome: string;
+  descricao?: string;
   valor_total: number;
   total_cotas: number;
   cotas_compradas: number;
@@ -66,20 +67,28 @@ export default function CheckoutModal({ presente, onClose }: CheckoutModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="relative w-full max-w-md bg-white border border-[#e1e9dc] p-6 shadow-2xl space-y-6">
+      <div className="relative w-full max-w-md bg-white border border-[#e1e9dc] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
         
         {/* Botão de Fechar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#607d5b] hover:text-[#3b5336] p-1 cursor-pointer transition-colors"
+          className="absolute top-4 right-4 text-[#607d5b] hover:text-[#3b5336] p-1 cursor-pointer transition-colors z-10"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <form onSubmit={handlePagar} className="space-y-5">
-          <div className="text-center space-y-1">
+        <form onSubmit={handlePagar} className="space-y-4">
+          <div className="text-center space-y-1.5">
             <span className="text-[10px] tracking-wider uppercase text-[#607d5b] font-semibold">Você escolheu presentear</span>
             <h3 className="font-serif text-xl text-[#3b5336] font-light">{presente.nome}</h3>
+            
+            {/* Descrição do Presente */}
+            {presente.descricao && (
+              <p className="text-xs text-[#607d5b] font-serif italic bg-[#f7f9f5] p-3 border border-[#e1e9dc] my-2 text-left leading-relaxed">
+                &ldquo;{presente.descricao}&rdquo;
+              </p>
+            )}
+
             <p className="text-xs text-[#607d5b] font-serif italic">
               Cota unitária: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorCotaUnitaria)}
             </p>
@@ -87,7 +96,7 @@ export default function CheckoutModal({ presente, onClose }: CheckoutModalProps)
 
           <div className="h-[1px] bg-[#f4f6f3]" />
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Nome */}
             <div className="space-y-1">
               <label className="text-xs uppercase tracking-wider text-[#607d5b]">Seu Nome Completo</label>
@@ -132,7 +141,7 @@ export default function CheckoutModal({ presente, onClose }: CheckoutModalProps)
             </div>
           </div>
 
-          <div className="bg-[#f7f9f5] p-4 flex justify-between items-center border border-[#e1e9dc]">
+          <div className="bg-[#f7f9f5] p-3 flex justify-between items-center border border-[#e1e9dc]">
             <span className="text-xs text-[#607d5b] uppercase tracking-wider font-semibold">Valor Total:</span>
             <span className="font-serif text-lg text-[#3b5336] font-bold">
               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotal)}
