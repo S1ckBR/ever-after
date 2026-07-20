@@ -16,7 +16,7 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center space-x-8 text-xs font-medium uppercase tracking-widest text-[#607d5b]">
           <Link href="#home" className="hover:text-[#3b5336] transition-colors">Home</Link>
           <Link href="#historia" className="hover:text-[#3b5336] transition-colors">Nossa História</Link>
-          <Link href="#cerimonia" className="hover:text-[#3b5336] transition-colors">Cerimônia & Festa</Link>
+          <Link href="#cerimonia" className="hover:text-[#3b5336] transition-colors">Cerimônia & Recepção</Link>
           <Link href="#presentes" className="hover:text-[#3b5336] transition-colors">Presentes</Link>
           <Link href="#rsvp" className="hover:text-[#3b5336] transition-colors">Confirme sua Presença</Link>
           <Link href="#mensagens" className="hover:text-[#3b5336] transition-colors">Mensagens</Link>
