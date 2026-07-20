@@ -4,14 +4,25 @@ import { supabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
-    // 1. O Mercado Pago envia o ID do pagamento no corpo da requisição ou na URL (query string)
+    // 1. O Mercado Pago pode enviar os dados na URL ou no Corpo (Body) do POST
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("data.id") || searchParams.get("id");
-    const type = searchParams.get("type");
+    let id = searchParams.get("data.id") || searchParams.get("id");
+    let type = searchParams.get("type") || searchParams.get("topic");
 
-    // Nós só queremos processar notificações do tipo 'payment' (pagamento)
-    if (type !== "payment" && !id) {
-      return NextResponse.json({ received: true });
+    // Se não achou na URL, tenta ler o Body da requisição (padrão dos Webhooks do MP)
+    if (!id) {
+      try {
+        const body = await request.json();
+        id = body?.data?.id || body?.id;
+        type = body?.type || body?.topic;
+      } catch (e) {
+        // Ignora erro se o body vier vazio
+      }
+    }
+
+    // Se não for uma notificação de pagamento válida, devolve 200 para o MP parar de insistir
+    if (type !== "payment" || !id) {
+      return NextResponse.json({ received: true }, { status: 200 });
     }
 
     // 2. Busca o Access Token do Mercado Pago salvo nas Configurações Gerais
@@ -21,6 +32,7 @@ export async function POST(request: Request) {
       .single();
 
     if (configError || !config?.mp_access_token) {
+      console.error("Erro: Token MP não configurado no Supabase.");
       return NextResponse.json({ error: "Token MP não configurado" }, { status: 500 });
     }
 
@@ -72,7 +84,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // O Mercado Pago exige que retornemos status 200 ou 201 para confirmar o recebimento do aviso
+    // 5. O Mercado Pago exige que retornemos status 200 para confirmar o recebimento do aviso
     return NextResponse.json({ received: true }, { status: 200 });
 
   } catch (error: any) {
