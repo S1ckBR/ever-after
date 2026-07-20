@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import CheckoutModal from "./CheckoutModal";
-import { Button } from "@/components/ui/button"; // Assumindo que você usa este componente
+import { Button } from "@/components/ui/button";
 
 interface Presente {
   id: string;
@@ -57,13 +57,13 @@ export default function Gifts({ presentesIniciais }: { presentesIniciais: Presen
                   key={p.id} 
                   className="bg-white border border-[#e1e9dc] p-4 flex flex-col transition-all duration-300 hover:shadow-lg"
                 >
-                  {/* Imagem */}
-                  <div className="relative h-48 w-full overflow-hidden bg-[#f4f6f3] mb-4">
+                  {/* Imagem (object-contain garante que a foto apareça inteira sem cortes) */}
+                  <div className="relative h-48 w-full overflow-hidden bg-[#f4f6f3] mb-4 flex items-center justify-center">
                     <Image
                       src={p.imagem_url}
                       alt={p.nome}
                       fill
-                      className="object-cover"
+                      className="object-contain p-2"
                     />
                   </div>
 
@@ -92,7 +92,7 @@ export default function Gifts({ presentesIniciais }: { presentesIniciais: Presen
                   <button
                     disabled={esgotado}
                     onClick={() => setPresenteSelecionado(p)}
-                    className={`w-full py-3 text-xs tracking-widest uppercase font-semibold transition-colors border border-[#3b5336] ${
+                    className={`w-full py-3 text-xs tracking-widest uppercase font-semibold transition-colors border border-[#3b5336] cursor-pointer ${
                       esgotado
                         ? "bg-[#eef2ed] text-[#a3b899] border-transparent cursor-not-allowed"
                         : "bg-transparent text-[#3b5336] hover:bg-[#3b5336] hover:text-white"
