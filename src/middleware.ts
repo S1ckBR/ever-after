@@ -4,24 +4,27 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // Verifica se o usuário está tentando acessar qualquer página dentro de /admin
   if (path.startsWith("/admin")) {
-    // Procura pelo cookie de sessão do Supabase ou cookie de autenticação admin
-    const supabaseToken = request.cookies.get("sb-access-token") || request.cookies.get("sb-refresh-token");
-    const adminSession = request.cookies.get("admin_logged");
+    // Procura por tokens de sessão do Supabase nos cookies
+    const allCookies = request.cookies.getAll();
+    const hasSupabaseSession = allCookies.some(cookie => 
+      cookie.name.includes("sb-") && cookie.name.includes("auth-token")
+    );
 
-    // Se não houver nenhum indicativo de sessão/login, bloqueia e redireciona para a home
-    if (!supabaseToken && !adminSession) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    // Se houver sessão do Supabase ou se for uma rota interna liberada, deixa passar
+    if (hasSupabaseSession) {
+      return NextResponse.json ? NextResponse.next() : NextResponse.next();
     }
+
+    // Se não estiver logado, redireciona para a página inicial (ou você pode criar uma tela de login se preferir)
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-// Configura o middleware para rodar apenas nas rotas /admin
 export const config = {
   matcher: "/admin/:path*",
 };
