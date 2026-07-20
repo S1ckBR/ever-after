@@ -44,22 +44,38 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setFeedback(null);
 
-    try {
-      // Verifica se há acompanhantes de fato com base na quantidade informada
-      const totalPessoas = Number(form.quantidade_adultos) + Number(form.quantidade_criancas);
-      const precisaNomes = totalPessoas > 1;
+    // Validação estrita para impedir envios vazios ou apenas com espaços em branco
+    if (!form.nome_completo.trim()) {
+      setFeedback({ tipo: "erro", mensagem: "Por favor, preencha o seu nome completo." });
+      return;
+    }
 
+    if (!form.telefone.trim()) {
+      setFeedback({ tipo: "erro", mensagem: "Por favor, preencha o seu telefone / WhatsApp." });
+      return;
+    }
+
+    const totalPessoas = Number(form.quantidade_adultos) + Number(form.quantidade_criancas);
+    const precisaNomes = form.status === "confirmado" && totalPessoas > 1;
+
+    if (precisaNomes && !form.nomes_acompanhantes.trim()) {
+      setFeedback({ tipo: "erro", mensagem: "Por favor, informe o nome dos acompanhantes." });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
       const { error } = await supabase.from("rsvp").insert({
-        nome_completo: form.nome_completo,
-        telefone: form.telefone,
+        nome_completo: form.nome_completo.trim(),
+        telefone: form.telefone.trim(),
         quantidade_adultos: Number(form.quantidade_adultos),
         quantidade_criancas: Number(form.quantidade_criancas),
         status: form.status,
         opcao_comparecimento: form.status === "confirmado" ? form.opcao_comparecimento : null,
-        nomes_acompanhantes: (form.status === "confirmado" && precisaNomes) ? form.nomes_acompanhantes : null,
+        nomes_acompanhantes: precisaNomes ? form.nomes_acompanhantes.trim() : null,
       });
 
       if (error) throw error;
