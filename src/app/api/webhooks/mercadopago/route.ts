@@ -4,24 +4,21 @@ import { supabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
-    // 1. O Mercado Pago pode enviar os dados na URL ou no Corpo (Body) do POST
     const { searchParams } = new URL(request.url);
     let id = searchParams.get("data.id") || searchParams.get("id");
-    let type = searchParams.get("type") || searchParams.get("topic");
 
-    // Se não achou na URL, tenta ler o Body da requisição (padrão dos Webhooks do MP)
+    // Se não achou na URL, tenta ler o Corpo (Body) da requisição
     if (!id) {
       try {
         const body = await request.json();
         id = body?.data?.id || body?.id;
-        type = body?.type || body?.topic;
       } catch (e) {
         // Ignora erro se o body vier vazio
       }
     }
 
-    // Se não for uma notificação de pagamento válida, devolve 200 para o MP parar de insistir
-    if (type !== "payment" || !id) {
+    // Se chegou aqui sem ID, responde 200 para o MP não ficar travado
+    if (!id) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
@@ -50,6 +47,8 @@ export async function POST(request: Request) {
         const presenteId = metadata.presente_id;
         const quantidadeComprada = Number(metadata.quantidade_cotas);
         const nomeConvidado = metadata.nome_convidado || "Convidado Anônimo";
+        const emailConvidado = paymentData.payer?.email || "";
+        const valorPago = paymentData.transaction_amount || 0;
 
         // Busca a quantidade atual de cotas compradas daquele presente
         const { data: presente, error: fetchError } = await supabase
@@ -58,37 +57,41 @@ export async function POST(request: Request) {
           .eq("id", presenteId)
           .single();
 
-        if (fetchError || !presente) {
-          console.error("Presente não encontrado para atualizar:", presenteId);
-          return NextResponse.json({ error: "Presente não encontrado" }, { status: 404 });
+        if (!fetchError && presente) {
+          const novasCotasCompradas = Math.min(
+            presente.cotas_compradas + quantidadeComprada,
+            presente.total_cotas
+          );
+
+          // Atualiza as cotas no presente
+          await supabase
+            .from("presentes")
+            .update({ cotas_compradas: novasCotasCompradas })
+            .eq("id", presenteId);
         }
 
-        // Calcula a nova quantidade de cotas sem ultrapassar o limite total
-        const novasCotasCompradas = Math.min(
-          presente.cotas_compradas + quantidadeComprada,
-          presente.total_cotas
-        );
+        // Registra o recibo na tabela
+        const { error: insertError } = await supabase
+          .from("presentes_recebidos")
+          .insert({
+            presente_id: presenteId,
+            nome_convidado: nomeConvidado,
+            email_convidado: emailConvidado,
+            quantidade_cotas: quantidadeComprada,
+            valor_pago: valorPago,
+            mp_payment_id: String(id)
+          });
 
-        // Atualiza a quantidade de cotas no Supabase
-        const { error: updateError } = await supabase
-          .from("presentes")
-          .update({ cotas_compradas: novasCotasCompradas })
-          .eq("id", presenteId);
-
-        if (updateError) {
-          console.error("Erro ao atualizar cotas no Supabase:", updateError);
-          return NextResponse.json({ error: "Erro ao atualizar cotas" }, { status: 500 });
+        if (insertError) {
+          console.error("Erro ao registrar o recibo do presente:", insertError);
         }
-
-        console.log(`Sucesso: ${quantidadeComprada} cota(s) adicionada(s) ao presente ID ${presenteId} por ${nomeConvidado}.`);
       }
     }
 
-    // 5. O Mercado Pago exige que retornemos status 200 para confirmar o recebimento do aviso
     return NextResponse.json({ received: true }, { status: 200 });
 
   } catch (error: any) {
-    console.error("Erro no Webhook do Mercado Pago:", error);
+    console.error("Erro no Webhook:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
