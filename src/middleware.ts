@@ -11,12 +11,12 @@ export function middleware(request: NextRequest) {
       cookie.name.includes("sb-") && cookie.name.includes("auth-token")
     );
 
-    // Se houver sessão do Supabase ou se for uma rota interna liberada, deixa passar
+    // Se houver sessão do Supabase, deixa passar
     if (hasSupabaseSession) {
-      return NextResponse.json ? NextResponse.next() : NextResponse.next();
+      return NextResponse.next();
     }
 
-    // Se não estiver logado, redireciona para a página inicial (ou você pode criar uma tela de login se preferir)
+    // Se não estiver logado, redireciona para a página inicial
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
