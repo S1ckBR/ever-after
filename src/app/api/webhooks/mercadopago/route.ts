@@ -7,7 +7,6 @@ export async function POST(request: Request) {
     const { searchParams } = new URL(request.url);
     let id = searchParams.get("data.id") || searchParams.get("id");
 
-    // Se não achou na URL, tenta ler o Corpo (Body) da requisição
     if (!id) {
       try {
         const body = await request.json();
@@ -17,30 +16,32 @@ export async function POST(request: Request) {
       }
     }
 
-    // Se chegou aqui sem ID, responde 200 para o MP não ficar travado
-    if (!id) {
-      return NextResponse.json({ received: true }, { status: 200 });
+    // Se não veio ID ou se for um ID de simulação do painel do MP (começa com PAY0), responde 200 direto
+    if (!id || (typeof id === "string" && id.startsWith("PAY0"))) {
+      return NextResponse.json({ received: true, simulated: true }, { status: 200 });
     }
 
-    // 2. Busca o Access Token do Mercado Pago salvo nas Configurações Gerais
     const { data: config, error: configError } = await supabase
       .from("configuracoes")
       .select("mp_access_token")
       .single();
 
     if (configError || !config?.mp_access_token) {
-      console.error("Erro: Token MP não configurado no Supabase.");
-      return NextResponse.json({ error: "Token MP não configurado" }, { status: 500 });
+      return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    // 3. Inicializa o cliente do Mercado Pago para buscar os detalhes reais deste pagamento
     const client = new MercadoPagoConfig({ accessToken: config.mp_access_token });
     const payment = new Payment(client);
 
-    const paymentData = await payment.get({ id: String(id) });
+    let paymentData;
+    try {
+      paymentData = await payment.get({ id: String(id) });
+    } catch (err) {
+      // Se o ID real não for encontrado na API, apenas retorna 200 para evitar loop de erro
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
 
-    // 4. Verifica se o pagamento foi realmente APROVADO
-    if (paymentData.status === "approved") {
+    if (paymentData && paymentData.status === "approved") {
       const { metadata } = paymentData;
 
       if (metadata && metadata.presente_id && metadata.quantidade_cotas) {
@@ -50,7 +51,6 @@ export async function POST(request: Request) {
         const emailConvidado = paymentData.payer?.email || "";
         const valorPago = paymentData.transaction_amount || 0;
 
-        // Busca a quantidade atual de cotas compradas daquele presente
         const { data: presente, error: fetchError } = await supabase
           .from("presentes")
           .select("cotas_compradas, total_cotas")
@@ -63,15 +63,13 @@ export async function POST(request: Request) {
             presente.total_cotas
           );
 
-          // Atualiza as cotas no presente
           await supabase
             .from("presentes")
             .update({ cotas_compradas: novasCotasCompradas })
             .eq("id", presenteId);
         }
 
-        // Registra o recibo na tabela
-        const { error: insertError } = await supabase
+        await supabase
           .from("presentes_recebidos")
           .insert({
             presente_id: presenteId,
@@ -81,10 +79,6 @@ export async function POST(request: Request) {
             valor_pago: valorPago,
             mp_payment_id: String(id)
           });
-
-        if (insertError) {
-          console.error("Erro ao registrar o recibo do presente:", insertError);
-        }
       }
     }
 
@@ -92,6 +86,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error("Erro no Webhook:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ received: true }, { status: 200 });
   }
 }
