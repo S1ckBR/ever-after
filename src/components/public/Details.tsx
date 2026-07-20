@@ -57,11 +57,11 @@ export default function Details({ config }: DetailsProps) {
             </Button>
           </div>
 
-          {/* Box 2: Recepção / Festa */}
+          {/* Box 2: Recepção */}
           <div className="bg-white border border-[#e1e9dc] p-8 md:p-12 text-center space-y-6 shadow-sm flex flex-col justify-between">
             <div className="space-y-4">
               <span className="font-serif italic text-2xl text-[var(--color-primary)] font-light block">
-                Recepção & Festa
+                Recepção
               </span>
               <div className="h-[1px] w-12 bg-[#e1e9dc] mx-auto" />
               
