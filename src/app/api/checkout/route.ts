@@ -1,88 +1,91 @@
 import { NextResponse } from "next/server";
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
-    const { presenteId, nomeConvidado, emailConvidado, quantidadeCotas } = await request.json();
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get("data.id") || searchParams.get("id");
+    let type = searchParams.get("type") || searchParams.get("topic");
 
-    // 1. Busca os dados do presente no banco de dados
-    const { data: presente, error: presenteError } = await supabase
-      .from("presentes")
-      .select("*")
-      .eq("id", presenteId)
-      .single();
-
-    if (presenteError || !presente) {
-      return NextResponse.json({ error: "Presente não encontrado." }, { status: 404 });
+    if (!id) {
+      try {
+        const body = await request.json();
+        id = body?.data?.id || body?.id;
+        type = body?.type || body?.topic;
+      } catch (e) {
+        // Ignora erro se o body vier vazio
+      }
     }
 
-    // 2. Busca o Access Token do Mercado Pago
+    if (type !== "payment" || !id) {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
     const { data: config, error: configError } = await supabase
       .from("configuracoes")
       .select("mp_access_token")
       .single();
 
     if (configError || !config?.mp_access_token) {
-      return NextResponse.json(
-        { error: "Integração com o Mercado Pago não configurada." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Token MP não configurado" }, { status: 500 });
     }
 
-    // Calcula o valor
-    const valorUnitarioCota = Number(presente.valor_total) / presente.total_cotas;
-    const valorTotalPagamento = valorUnitarioCota * Number(quantidadeCotas);
-
-    // 3. Inicializa o Mercado Pago
     const client = new MercadoPagoConfig({ accessToken: config.mp_access_token });
-    const preference = new Preference(client);
+    const payment = new Payment(client);
+    const paymentData = await payment.get({ id: String(id) });
 
-    // Na Vercel, precisamos garantir que a URL base esteja correta
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://SEU_DOMINIO_AQUI.vercel.app";
+    if (paymentData.status === "approved") {
+      const { metadata } = paymentData;
 
-    // 4. Cria a preferência de checkout
-    const preferenceResponse = await preference.create({
-      body: {
-        items: [
-          {
-            id: presenteId,
-            title: `Presente: ${presente.nome} (${quantidadeCotas} cota(s))`,
-            quantity: 1,
-            unit_price: Number(valorTotalPagamento.toFixed(2)),
-            currency_id: "BRL"
-          }
-        ],
-        payer: {
-          name: nomeConvidado.split(" ")[0],
-          surname: nomeConvidado.split(" ").slice(1).join(" ") || "Convidado",
-          email: emailConvidado,
-        },
-        // Adicionamos parâmetros na URL para o site saber o que aconteceu
-        back_urls: {
-          success: `${appUrl}/?status=success`,
-          pending: `${appUrl}/?status=pending`,
-          failure: `${appUrl}/?status=failure`,
-        },
-        // OBRIGATÓRIO: Força o Mercado Pago a redirecionar o usuário de volta na hora!
-        auto_return: "approved", 
-        // AQUI ESTÁ A MODIFICAÇÃO: URL para o Mercado Pago avisar o seu site
-        notification_url: `${appUrl}/api/webhooks/mercadopago`,
-        metadata: {
-          presente_id: presenteId,
-          quantidade_cotas: quantidadeCotas,
-          nome_convidado: nomeConvidado,
+      if (metadata && metadata.presente_id && metadata.quantidade_cotas) {
+        const presenteId = metadata.presente_id;
+        const quantidadeComprada = Number(metadata.quantidade_cotas);
+        const nomeConvidado = metadata.nome_convidado || "Convidado Anônimo";
+        const emailConvidado = paymentData.payer?.email || "";
+        const valorPago = paymentData.transaction_amount || 0;
+
+        // 1. Atualiza a quantidade de cotas no presente
+        const { data: presente, error: fetchError } = await supabase
+          .from("presentes")
+          .select("cotas_compradas, total_cotas")
+          .eq("id", presenteId)
+          .single();
+
+        if (!fetchError && presente) {
+          const novasCotasCompradas = Math.min(
+            presente.cotas_compradas + quantidadeComprada,
+            presente.total_cotas
+          );
+
+          await supabase
+            .from("presentes")
+            .update({ cotas_compradas: novasCotasCompradas })
+            .eq("id", presenteId);
+        }
+
+        // 2. REGISTRA QUEM DEU O PRESENTE NA NOVA TABELA
+        const { error: insertError } = await supabase
+          .from("presentes_recebidos")
+          .insert({
+            presente_id: presenteId,
+            nome_convidado: nomeConvidado,
+            email_convidado: emailConvidado,
+            quantidade_cotas: quantidadeComprada,
+            valor_pago: valorPago,
+            mp_payment_id: String(id)
+          });
+
+        if (insertError) {
+          console.error("Erro ao registrar o recibo do presente:", insertError);
         }
       }
-    });
+    }
 
-    return NextResponse.json({
-      id: preferenceResponse.id,
-      init_point: preferenceResponse.init_point,
-    });
+    return NextResponse.json({ received: true }, { status: 200 });
 
   } catch (error: any) {
-    console.error("Erro ao gerar checkout:", error);
-    return NextResponse.json({ error: error.message || "Erro interno." }, { status: 500 });
+    console.error("Erro no Webhook:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
