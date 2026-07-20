@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { uploadPresenteImagem } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Gift, Trash2, Plus, Upload, X, Save } from "lucide-react";
+import { Gift, Trash2, Plus, Upload, X, Save, User } from "lucide-react";
 import Image from "next/image";
 
 export default function AdminPresentes() {
@@ -25,13 +25,14 @@ export default function AdminPresentes() {
     categoria: "Geral",
   });
 
-  // Carrega todos os presentes do banco de dados
+  // Carrega todos os presentes E a lista de quem comprou
   const loadPresentes = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("presentes")
-        .select("*")
+        // O Supabase entende a relação e traz os compradores como um array dentro de cada presente
+        .select("*, presentes_recebidos(*)") 
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -67,7 +68,6 @@ export default function AdminPresentes() {
     try {
       let finalImageUrl = "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=600";
 
-      // 1. Faz o upload da imagem se houver arquivo selecionado
       if (imageFile) {
         const uploadedUrl = await uploadPresenteImagem(imageFile);
         if (uploadedUrl) {
@@ -75,7 +75,6 @@ export default function AdminPresentes() {
         }
       }
 
-      // 2. Salva o registro no banco de dados
       const { error } = await supabase
         .from("presentes")
         .insert({
@@ -92,7 +91,6 @@ export default function AdminPresentes() {
 
       alert("Presente cadastrado com sucesso!");
       
-      // Reseta os estados e recarrega a lista
       setForm({ nome: "", descricao: "", valor_total: "", total_cotas: "1", categoria: "Geral" });
       setImageFile(null);
       setImagePreview(null);
@@ -143,7 +141,7 @@ export default function AdminPresentes() {
         )}
       </div>
 
-      {/* Formulário de Cadastro (Aparece ao clicar em "Novo Presente") */}
+      {/* Formulário de Cadastro */}
       {showForm && (
         <Card className="rounded-none border-[#e1e9dc] bg-white shadow-sm max-w-2xl">
           <form onSubmit={handleSubmit}>
@@ -239,7 +237,6 @@ export default function AdminPresentes() {
                 />
               </div>
 
-              {/* Upload de Imagem Simples e Elegante */}
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-wider text-[#607d5b] block">Foto do Presente</label>
                 <div className="flex gap-4 items-center border border-[#e1e9dc] p-4 bg-[#fbfcfb]">
@@ -321,18 +318,42 @@ export default function AdminPresentes() {
                 </CardHeader>
                 <CardContent className="p-4 pt-1 space-y-3">
                   <p className="text-xs text-[#607d5b] font-serif italic line-clamp-2">{p.descricao}</p>
+                  
                   <div className="flex justify-between text-xs text-[#607d5b] border-t border-[#f4f6f3] pt-2">
                     <span>Valor Total:</span>
                     <span className="font-semibold text-[#3b5336]">
                       {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(p.valor_total)}
                     </span>
                   </div>
+                  
                   <div className="flex justify-between text-xs text-[#607d5b]">
                     <span>Cotas:</span>
                     <span className="font-semibold text-[#3b5336]">
                       {p.cotas_compradas} de {p.total_cotas} ({p.total_cotas - p.cotas_compradas} restantes)
                     </span>
                   </div>
+
+                  {/* SESSÃO NOVA: QUEM PRESENTEOU */}
+                  {p.presentes_recebidos && p.presentes_recebidos.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-[#f4f6f3]">
+                      <h4 className="text-[10px] uppercase tracking-wider text-[#607d5b] mb-2 font-semibold flex items-center gap-1">
+                        <User className="h-3 w-3" /> Quem Presenteou:
+                      </h4>
+                      <ul className="space-y-1.5 max-h-24 overflow-y-auto pr-1 custom-scrollbar">
+                        {p.presentes_recebidos.map((rec: any) => (
+                          <li key={rec.id} className="text-[11px] text-[#3b5336] flex justify-between bg-[#f4f6f3] p-1.5 px-2">
+                            <span className="font-medium truncate mr-2" title={rec.nome_convidado}>
+                              {rec.nome_convidado}
+                            </span>
+                            <span className="whitespace-nowrap font-semibold">
+                              {rec.quantidade_cotas} cota(s)
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                 </CardContent>
               </div>
               <CardFooter className="p-4 pt-0 border-t border-[#f4f6f3] flex justify-end bg-[#fbfcfb]">
