@@ -113,8 +113,14 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
   const exibeCampoAcompanhantes = form.status === "confirmado" && totalConfirmados > 1;
 
   return (
-    <section id="rsvp" className="py-20 bg-[#f7f9f5] border-t border-[#e1e9dc]">
-      <div className="mx-auto max-w-xl px-4">
+    <section 
+      id="rsvp" 
+      className="py-20 border-t border-[#e1e9dc] relative bg-cover bg-center"
+      style={{ 
+        backgroundImage: "linear-gradient(rgba(247, 249, 245, 0.90), rgba(247, 249, 245, 0.90)), url('/textura-linho.jpg')" 
+      }}
+    >
+      <div className="mx-auto max-w-xl px-4 relative z-10">
         <div className="text-center space-y-3 mb-10">
           <span className="text-[11px] tracking-[0.25em] uppercase text-[#607d5b] block font-semibold">
             R.S.V.P
