@@ -117,7 +117,7 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
       id="rsvp" 
       className="py-20 border-t border-[#e1e9dc] relative bg-cover bg-center"
       style={{ 
-        backgroundImage: "linear-gradient(rgba(247, 249, 245, 0.90), rgba(247, 249, 245, 0.90)), url('/textura-linho.jpg')" 
+        backgroundImage: "linear-gradient(rgba(247, 249, 245, 0.40), rgba(247, 249, 245, 0.40)), url('/textura-linho.jpg')" 
       }}
     >
       <div className="mx-auto max-w-xl px-4 relative z-10">
