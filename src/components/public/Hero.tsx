@@ -1,8 +1,3 @@
-Claro. Esta é a **Parte 1 do novo `Hero.tsx`**, desde os imports até o fechamento da área principal com texto e imagem.
-
-Não substitua o arquivo ainda; aguarde as próximas partes para montar o componente completo.
-
-```tsx
 "use client";
 
 import Image from "next/image";
