@@ -48,6 +48,27 @@ export default function Hero({
         } · ${year}`
       : "DATA A DEFINIR";
 
+  const scrollToSection = (id: string) => {
+    const exactTarget = document.getElementById(id);
+
+    if (exactTarget) {
+      exactTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    // Compatibilidade caso a seção de recepção use outro ID semelhante.
+    if (id === "recepcao") {
+      const receptionTarget = document.querySelector<HTMLElement>(
+        '[id*="recep" i], [data-section*="recep" i]'
+      );
+
+      receptionTarget?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   const navLinks = [
     {
       label: "NOSSA HISTÓRIA",
@@ -333,11 +354,7 @@ export default function Hero({
               <button
                 key={idx}
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById(link.id)
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                onClick={() => scrollToSection(link.id)}
                 className="group relative flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-7 text-white shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.12] hover:shadow-xl md:rounded-none md:border-y-0 md:border-l-0 md:border-r md:bg-transparent md:shadow-none md:last:border-r-0"
               >
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-white/10 transition-all duration-300 group-hover:scale-110 group-hover:bg-white/15">
