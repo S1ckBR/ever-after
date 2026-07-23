@@ -64,17 +64,32 @@ export default function GiftCard({
         presenteConcluido ? "ring-1 ring-[#b89450]/45" : "",
       ].join(" ")}
     >
-      <div className="relative h-60 w-full overflow-hidden bg-[#eef1ea] sm:h-64">
+      {/* Imagem completa, sem cortes */}
+      <div className="relative h-60 w-full overflow-hidden bg-[#eeeae1] sm:h-64">
+        {/* Fundo suave criado com a própria imagem para evitar faixas vazias */}
+        <Image
+          src={imagemUrl}
+          alt=""
+          fill
+          aria-hidden="true"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          className="scale-110 object-cover opacity-20 blur-2xl"
+        />
+
+        <div className="absolute inset-0 bg-[#f7f3eb]/35" />
+
+        {/* Imagem principal enquadrada por inteiro */}
         <Image
           src={imagemUrl}
           alt={nome}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+          className="object-contain p-1.5 transition-transform duration-700 group-hover:scale-[1.015] sm:p-2"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/5" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
 
+        {/* Selo de cotas */}
         <div
           className={[
             "absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full",
@@ -93,11 +108,13 @@ export default function GiftCard({
           ) : (
             <>
               <Sparkles className="h-3.5 w-3.5 text-[#b48936]" />
-              Restam {cotasRestantes} {cotasRestantes === 1 ? "cota" : "cotas"}
+              Restam {cotasRestantes}{" "}
+              {cotasRestantes === 1 ? "cota" : "cotas"}
             </>
           )}
         </div>
 
+        {/* Ornamento inferior */}
         <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 translate-y-1/2 items-center justify-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#fffdf9] bg-[#dfe7da] shadow-md">
             {presenteConcluido ? (
@@ -161,7 +178,10 @@ export default function GiftCard({
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#91a88a] via-[#789470] to-[#b89450] transition-all duration-700"
                 style={{
-                  width: `${Math.min(Math.max(progressoPorcentagem, 0), 100)}%`,
+                  width: `${Math.min(
+                    Math.max(progressoPorcentagem, 0),
+                    100
+                  )}%`,
                 }}
               />
               <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,.45)_45%,transparent_70%)] opacity-50" />
