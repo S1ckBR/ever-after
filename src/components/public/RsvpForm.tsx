@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
+  AlertTriangle,
   CalendarCheck,
   CheckCircle2,
   Heart,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   UserPlus,
   Users,
+  UtensilsCrossed,
   XCircle,
 } from "lucide-react";
 
@@ -26,6 +28,7 @@ interface RsvpFormState {
   quantidade_criancas: number;
   status: "confirmado" | "recusado";
   opcao_comparecimento:
+    | ""
     | "cerimonia_e_jantar"
     | "apenas_cerimonia"
     | "apenas_jantar";
@@ -38,7 +41,7 @@ const estadoInicial: RsvpFormState = {
   quantidade_adultos: 1,
   quantidade_criancas: 0,
   status: "confirmado",
-  opcao_comparecimento: "cerimonia_e_jantar",
+  opcao_comparecimento: "",
   nomes_acompanhantes: "",
 };
 
@@ -49,6 +52,8 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
     mensagem: string;
   } | null>(null);
   const [form, setForm] = useState<RsvpFormState>(estadoInicial);
+  const [avisoJantarAberto, setAvisoJantarAberto] = useState(false);
+  const [cienteJantar, setCienteJantar] = useState(false);
 
   const formatarDataLimite = (data?: string) => {
     if (!data) return null;
@@ -74,9 +79,65 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
   ) => {
     const { name, value, type } = e.target;
 
+    if (name === "status") {
+      const novoStatus = value as "confirmado" | "recusado";
+
+      setForm((prev) => ({
+        ...prev,
+        status: novoStatus,
+        opcao_comparecimento:
+          novoStatus === "confirmado" ? prev.opcao_comparecimento : "",
+        nomes_acompanhantes:
+          novoStatus === "confirmado" ? prev.nomes_acompanhantes : "",
+      }));
+
+      if (novoStatus === "recusado") {
+        setCienteJantar(false);
+        setAvisoJantarAberto(false);
+      }
+
+      return;
+    }
+
+    if (name === "opcao_comparecimento") {
+      const novaOpcao = value as RsvpFormState["opcao_comparecimento"];
+      const incluiJantar =
+        novaOpcao === "cerimonia_e_jantar" ||
+        novaOpcao === "apenas_jantar";
+
+      setForm((prev) => ({
+        ...prev,
+        opcao_comparecimento: novaOpcao,
+      }));
+
+      if (incluiJantar) {
+        setCienteJantar(false);
+        setAvisoJantarAberto(true);
+      } else {
+        setCienteJantar(false);
+        setAvisoJantarAberto(false);
+      }
+
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]: type === "number" ? Number(value) : value,
+    }));
+  };
+
+  const confirmarCienciaJantar = () => {
+    setCienteJantar(true);
+    setAvisoJantarAberto(false);
+  };
+
+  const cancelarOpcaoJantar = () => {
+    setCienteJantar(false);
+    setAvisoJantarAberto(false);
+    setForm((prev) => ({
+      ...prev,
+      opcao_comparecimento: "",
     }));
   };
 
@@ -114,6 +175,35 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
         tipo: "erro",
         mensagem: "Informe pelo menos um adulto na confirmação.",
       });
+      return;
+    }
+
+    if (
+      form.status === "confirmado" &&
+      !form.opcao_comparecimento
+    ) {
+      setFeedback({
+        tipo: "erro",
+        mensagem: "Selecione onde você comparecerá.",
+      });
+      return;
+    }
+
+    const opcaoIncluiJantar =
+      form.opcao_comparecimento === "cerimonia_e_jantar" ||
+      form.opcao_comparecimento === "apenas_jantar";
+
+    if (
+      form.status === "confirmado" &&
+      opcaoIncluiJantar &&
+      !cienteJantar
+    ) {
+      setFeedback({
+        tipo: "erro",
+        mensagem:
+          "Antes de confirmar, leia e aceite o aviso sobre o jantar.",
+      });
+      setAvisoJantarAberto(true);
       return;
     }
 
@@ -162,6 +252,8 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
       });
 
       setForm(estadoInicial);
+      setCienteJantar(false);
+      setAvisoJantarAberto(false);
     } catch (error) {
       console.error("Falha ao enviar RSVP:", error);
 
@@ -433,7 +525,11 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
                     value={form.opcao_comparecimento}
                     onChange={handleChange}
                     className={inputClassName}
+                    required
                   >
+                    <option value="" disabled>
+                      Selecione uma opção
+                    </option>
                     <option value="cerimonia_e_jantar">
                       Cerimônia &amp; Jantar
                     </option>
@@ -444,6 +540,18 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
                       Apenas no Jantar
                     </option>
                   </select>
+
+                  {cienteJantar &&
+                    (form.opcao_comparecimento === "cerimonia_e_jantar" ||
+                      form.opcao_comparecimento === "apenas_jantar") && (
+                      <div className="mt-3 flex items-start gap-3 rounded-xl border border-[#d9c596] bg-[#f7f0df] px-4 py-3 text-xs leading-relaxed text-[#6e5b2c]">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#9b7a38]" />
+                        <p>
+                          Você confirmou que está ciente das condições do jantar
+                          no Coco Bambu.
+                        </p>
+                      </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -530,6 +638,80 @@ export default function RsvpForm({ dataLimiteRsvp }: RsvpFormProps) {
           </div>
         </form>
       </div>
+
+      {avisoJantarAberto && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#243324]/55 px-4 py-8 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-aviso-jantar"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-[26px] border border-[#d9c89e] bg-[#fffdf9] shadow-[0_28px_80px_rgba(28,39,27,0.28)]">
+            <div className="border-b border-[#eadfc9] bg-[#f7f0df] px-6 py-6 text-center sm:px-8">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#d8c18c] bg-[#fffaf0] text-[#9b7a38]">
+                <UtensilsCrossed className="h-6 w-6" />
+              </div>
+
+              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9b7a38]">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Informação importante
+              </div>
+
+              <h3
+                id="titulo-aviso-jantar"
+                className="mt-2 font-serif text-2xl text-[#395138]"
+              >
+                Sobre o jantar no Coco Bambu
+              </h3>
+            </div>
+
+            <div className="space-y-4 px-6 py-6 sm:px-8">
+              <p className="font-serif text-[15px] leading-7 text-[#5f685b]">
+                Após a cerimônia, teremos um jantar no Coco Bambu e ficaremos
+                muito felizes em continuar celebrando esse momento com você.
+              </p>
+
+              <div className="rounded-2xl border border-[#dfd2b5] bg-[#faf6ed] p-5">
+                <p className="text-sm leading-6 text-[#596353]">
+                  O valor do jantar será de{" "}
+                  <strong className="text-[#395138]">R$ 120,00 por pessoa</strong>,
+                  pago diretamente ao restaurante no dia do evento. O atendimento
+                  será feito por{" "}
+                  <strong className="text-[#395138]">comandas individuais</strong>.
+                </p>
+              </div>
+
+              <p className="text-sm leading-6 text-[#6b7467]">
+                Para conseguirmos reunir todos nesse momento especial, o jantar
+                não estará incluído no convite. Ao continuar com esta opção,
+                você confirma que está ciente dessa condição.
+              </p>
+
+              <p className="font-serif text-sm italic leading-6 text-[#71806d]">
+                Esperamos muito poder celebrar esse momento com você. 💚
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-[#eadfc9] bg-[#fbf8f2] px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
+              <button
+                type="button"
+                onClick={cancelarOpcaoJantar}
+                className="h-11 rounded-xl border border-[#d8cfbf] bg-white px-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#60705c] transition-colors hover:bg-[#f5f7f2]"
+              >
+                Voltar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarCienciaJantar}
+                className="h-11 rounded-xl bg-[#395138] px-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white shadow-[0_10px_22px_rgba(57,81,56,0.18)] transition-colors hover:bg-[#4e694a]"
+              >
+                Estou ciente e quero continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
