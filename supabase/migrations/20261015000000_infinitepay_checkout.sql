@@ -139,7 +139,7 @@ begin
     pedido.quantidade_cotas, p_amount_cents::numeric / 100,
     'infinitepay:' || p_transaction_nsu
   )
-  on conflict (mp_payment_id) do nothing
+  on conflict do nothing
   returning id into receipt_id;
 
   if receipt_id is null then
