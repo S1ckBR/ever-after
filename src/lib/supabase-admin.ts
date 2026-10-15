@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 // Never import this module into a client component. The service-role key bypasses RLS.
