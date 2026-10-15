@@ -9,9 +9,10 @@ const appUrl = () =>
 
 export async function POST(request: Request) {
   let orderNsu: string | null = null;
-  const supabase = getSupabaseAdmin();
+  let supabase: ReturnType<typeof getSupabaseAdmin> | null = null;
 
   try {
+    supabase = getSupabaseAdmin();
     const body = await request.json();
     const presenteId = typeof body.presenteId === "string" ? body.presenteId : "";
     const nomeConvidado = typeof body.nomeConvidado === "string" ? body.nomeConvidado.trim() : "";
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ checkout_url: checkoutUrl });
   } catch (error) {
     console.error("Erro ao criar checkout InfinitePay:", error instanceof Error ? error.message : "erro desconhecido");
-    if (orderNsu) {
+    if (orderNsu && supabase) {
       await supabase.from("checkout_pedidos").update({ status: "failed" }).eq("order_nsu", orderNsu);
     }
     return NextResponse.json({ error: "Erro interno ao iniciar o pagamento." }, { status: 500 });
