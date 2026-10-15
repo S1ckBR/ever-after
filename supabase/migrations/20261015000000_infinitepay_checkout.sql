@@ -21,6 +21,62 @@ grant select, insert, update, delete on table public.checkout_pedidos to service
 create index if not exists checkout_pedidos_presente_status_idx
   on public.checkout_pedidos (presente_id, status, created_at desc);
 
+create or replace function public.create_infinitepay_order(
+  p_order_nsu text,
+  p_presente_id uuid,
+  p_nome_convidado text,
+  p_email_convidado text,
+  p_quantidade_cotas integer
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  presente public.presentes%rowtype;
+  pending_cotas integer;
+  amount_cents integer;
+begin
+  if p_quantidade_cotas is null or p_quantidade_cotas < 1
+    or length(trim(coalesce(p_nome_convidado, ''))) < 2
+    or length(trim(coalesce(p_email_convidado, ''))) < 3 then
+    return jsonb_build_object('ok', false, 'reason', 'invalid_input');
+  end if;
+
+  select * into presente
+  from public.presentes
+  where id = p_presente_id
+  for update;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'reason', 'gift_not_found');
+  end if;
+
+  select coalesce(sum(quantidade_cotas), 0)::integer into pending_cotas
+  from public.checkout_pedidos
+  where presente_id = p_presente_id
+    and status = 'pending'
+    and created_at > now() - interval '30 minutes';
+
+  if coalesce(presente.cotas_compradas, 0) + pending_cotas + p_quantidade_cotas > presente.total_cotas then
+    return jsonb_build_object('ok', false, 'reason', 'not_enough_quotas');
+  end if;
+
+  amount_cents := round((presente.valor_total::numeric * 100 * p_quantidade_cotas) / presente.total_cotas)::integer;
+
+  insert into public.checkout_pedidos (
+    order_nsu, presente_id, nome_convidado, email_convidado,
+    quantidade_cotas, valor_centavos
+  ) values (
+    p_order_nsu, p_presente_id, trim(p_nome_convidado), lower(trim(p_email_convidado)),
+    p_quantidade_cotas, amount_cents
+  );
+
+  return jsonb_build_object('ok', true, 'amount_cents', amount_cents);
+end;
+$$;
+
 create or replace function public.confirm_infinitepay_checkout(
   p_order_nsu text,
   p_transaction_nsu text,
@@ -70,20 +126,17 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'gift_not_found');
   end if;
 
+  if coalesce(presente.cotas_compradas, 0) + pedido.quantidade_cotas > presente.total_cotas then
+    return jsonb_build_object('ok', false, 'reason', 'not_enough_quotas');
+  end if;
+
   insert into public.presentes_recebidos (
-    presente_id,
-    nome_convidado,
-    email_convidado,
-    quantidade_cotas,
-    valor_pago,
-    mp_payment_id
+    presente_id, nome_convidado, email_convidado,
+    quantidade_cotas, valor_pago, mp_payment_id
   )
   values (
-    pedido.presente_id,
-    pedido.nome_convidado,
-    pedido.email_convidado,
-    pedido.quantidade_cotas,
-    p_amount_cents::numeric / 100,
+    pedido.presente_id, pedido.nome_convidado, pedido.email_convidado,
+    pedido.quantidade_cotas, p_amount_cents::numeric / 100,
     'infinitepay:' || p_transaction_nsu
   )
   on conflict (mp_payment_id) do nothing
@@ -94,22 +147,19 @@ begin
   end if;
 
   update public.presentes
-  set cotas_compradas = least(
-    coalesce(cotas_compradas, 0) + pedido.quantidade_cotas,
-    total_cotas
-  )
+  set cotas_compradas = coalesce(cotas_compradas, 0) + pedido.quantidade_cotas
   where id = pedido.presente_id;
 
   update public.checkout_pedidos
-  set status = 'paid',
-      transaction_nsu = p_transaction_nsu,
-      invoice_slug = p_invoice_slug,
-      paid_at = now()
+  set status = 'paid', transaction_nsu = p_transaction_nsu,
+      invoice_slug = p_invoice_slug, paid_at = now()
   where id = pedido.id;
 
   return jsonb_build_object('ok', true, 'duplicate', false);
 end;
 $$;
 
+revoke all on function public.create_infinitepay_order(text, uuid, text, text, integer) from public, anon, authenticated;
+grant execute on function public.create_infinitepay_order(text, uuid, text, text, integer) to service_role;
 revoke all on function public.confirm_infinitepay_checkout(text, text, text, integer) from public, anon, authenticated;
 grant execute on function public.confirm_infinitepay_checkout(text, text, text, integer) to service_role;
