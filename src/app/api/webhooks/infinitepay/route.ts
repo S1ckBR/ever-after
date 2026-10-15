@@ -4,9 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabase = getSupabaseAdmin();
-
   try {
+    const supabase = getSupabaseAdmin();
     const payload = await request.json();
     const orderNsu = typeof payload?.order_nsu === "string" ? payload.order_nsu : "";
     const transactionNsu = typeof payload?.transaction_nsu === "string" ? payload.transaction_nsu : "";
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
 
     const { data: order, error: orderError } = await supabase
       .from("checkout_pedidos")
-      .select("order_nsu, valor_centavos, status")
+      .select("order_nsu, valor_centavos, status, transaction_nsu, invoice_slug")
       .eq("order_nsu", orderNsu)
       .maybeSingle();
 
@@ -43,7 +42,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Pedido não encontrado." }, { status: 400 });
     }
     if (order.status === "paid") {
-      return NextResponse.json({ success: true, message: null });
+      // Only acknowledge a retry for the exact transaction already recorded.
+      if (order.transaction_nsu === transactionNsu && order.invoice_slug === invoiceSlug) {
+        return NextResponse.json({ success: true, message: null });
+      }
+      return NextResponse.json({ success: false, message: "Pedido já confirmado com outra transação." }, { status: 400 });
     }
     if (order.status !== "pending" || Number(order.valor_centavos) !== amountCents) {
       return NextResponse.json({ success: false, message: "Pedido ou valor não corresponde." }, { status: 400 });
