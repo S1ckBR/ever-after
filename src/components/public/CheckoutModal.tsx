@@ -179,24 +179,6 @@ export default function CheckoutModal({ presente, onClose }: CheckoutModalProps)
             <button
               type="button"
               disabled={loading !== null}
-              onClick={() => handleEscolherCheckout("mercadopago")}
-              className="w-full border border-[#d9e2d3] p-4 text-left hover:border-[#3b5336] hover:bg-[#f7f9f5] disabled:opacity-60 transition-colors"
-            >
-              <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center bg-[#e6eee2] text-[#3b5336]">
-                  {loading === "mercadopago" ? <span className="animate-spin">◌</span> : <CreditCard className="h-5 w-5" />}
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-[#3b5336]">Mercado Pago</span>
-                  <span className="block text-xs text-[#71806d] mt-1">Cartão de crédito e Pix</span>
-                </span>
-                <ArrowRight className="h-4 w-4 text-[#71806d]" />
-              </span>
-            </button>
-
-            <button
-              type="button"
-              disabled={loading !== null}
               onClick={() => handleEscolherCheckout("infinitepay")}
               className="w-full border border-[#d9e2d3] p-4 text-left hover:border-[#3b5336] hover:bg-[#f7f9f5] disabled:opacity-60 transition-colors"
             >
@@ -206,6 +188,24 @@ export default function CheckoutModal({ presente, onClose }: CheckoutModalProps)
                 </span>
                 <span className="flex-1">
                   <span className="block text-sm font-semibold text-[#3b5336]">InfinitePay</span>
+                  <span className="block text-xs text-[#71806d] mt-1">Cartão de crédito e Pix</span>
+                </span>
+                <ArrowRight className="h-4 w-4 text-[#71806d]" />
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => handleEscolherCheckout("mercadopago")}
+              className="w-full border border-[#d9e2d3] p-4 text-left hover:border-[#3b5336] hover:bg-[#f7f9f5] disabled:opacity-60 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center bg-[#e6eee2] text-[#3b5336]">
+                  {loading === "mercadopago" ? <span className="animate-spin">◌</span> : <CreditCard className="h-5 w-5" />}
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold text-[#3b5336]">Mercado Pago</span>
                   <span className="block text-xs text-[#71806d] mt-1">Cartão de crédito e Pix</span>
                 </span>
                 <ArrowRight className="h-4 w-4 text-[#71806d]" />
