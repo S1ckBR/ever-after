@@ -7,6 +7,14 @@
 -- Supabase client. Public clients must not query this table directly.
 revoke all on table public.configuracoes from public, anon, authenticated;
 grant select, insert, update on table public.configuracoes to authenticated;
+grant select (
+  id, nome_noiva, nome_noivo, data_casamento, cor_principal, cor_secundaria,
+  cor_botoes, imagem_hero, texto_historia, imagem_historia_1, imagem_historia_2,
+  data_limite_rsvp, titulo_cerimonial, subtitulo_cerimonial, imagem_cerimonia,
+  cerimonia_data, cerimonia_hora, hora_cerimonia, cerimonia_local, local_cerimonia,
+  cerimonia_mapa_url, imagem_recepcao, festa_data, festa_hora, hora_recepcao,
+  festa_local, local_recepcao, festa_mapa_url
+) on table public.configuracoes to anon;
 
 revoke all on table public.presentes from public, anon, authenticated;
 grant select on table public.presentes to anon, authenticated;
@@ -28,6 +36,12 @@ alter table public.presentes enable row level security;
 alter table public.rsvp enable row level security;
 alter table public.mensagens enable row level security;
 alter table public.presentes_recebidos enable row level security;
+
+create policy configuracoes_public_read_safe
+  on public.configuracoes
+  for select
+  to anon
+  using (true);
 
 create policy configuracoes_admin_all
   on public.configuracoes
