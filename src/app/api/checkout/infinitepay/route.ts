@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     }
 
     const parsedUrl = new URL(checkoutUrl);
-    if (parsedUrl.protocol !== "https:" || !["checkout.infinitepay.com.br"].includes(parsedUrl.hostname)) {
+    if (parsedUrl.protocol !== "https:" || !["checkout.infinitepay.com.br", "checkout.infinitepay.io"].includes(parsedUrl.hostname)) {
       console.error("InfinitePay retornou uma URL de checkout inesperada:", {
         protocol: parsedUrl.protocol,
         hostname: parsedUrl.hostname,
