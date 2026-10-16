@@ -7,7 +7,6 @@ import RsvpForm from "@/components/public/RsvpForm";
 import Mural from "@/components/public/Mural";
 import Footer from "@/components/public/Footer";
 import { supabase } from "@/lib/supabase";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const revalidate = 0;
 
@@ -42,7 +41,7 @@ type WeddingConfig = {
 };
 
 async function getCasamentoData() {
-  const { data: config } = await getSupabaseAdmin()
+  const { data: config } = await supabase
     .from("configuracoes")
     .select("id, nome_noiva, nome_noivo, data_casamento, cor_principal, cor_secundaria, cor_botoes, imagem_hero, texto_historia, imagem_historia_1, imagem_historia_2, data_limite_rsvp, titulo_cerimonial, subtitulo_cerimonial, imagem_cerimonia, cerimonia_data, cerimonia_hora, hora_cerimonia, cerimonia_local, local_cerimonia, cerimonia_mapa_url, imagem_recepcao, festa_data, festa_hora, hora_recepcao, festa_local, local_recepcao, festa_mapa_url")
     .maybeSingle();
