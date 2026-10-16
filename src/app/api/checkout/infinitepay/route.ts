@@ -98,7 +98,10 @@ export async function POST(request: Request) {
 
     const parsedUrl = new URL(checkoutUrl);
     if (parsedUrl.protocol !== "https:" || !["checkout.infinitepay.com.br"].includes(parsedUrl.hostname)) {
-      console.error("InfinitePay retornou uma URL de checkout inesperada.");
+      console.error("InfinitePay retornou uma URL de checkout inesperada:", {
+        protocol: parsedUrl.protocol,
+        hostname: parsedUrl.hostname,
+      });
       await supabase.from("checkout_pedidos").update({ status: "failed" }).eq("order_nsu", orderNsu);
       return NextResponse.json({ error: "Não foi possível validar o link de pagamento." }, { status: 502 });
     }
