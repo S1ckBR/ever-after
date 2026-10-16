@@ -11,6 +11,36 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const revalidate = 0;
 
+type WeddingConfig = {
+  nome_noiva?: string;
+  nome_noivo?: string;
+  data_casamento?: string;
+  cor_principal?: string;
+  cor_secundaria?: string;
+  cor_botoes?: string;
+  imagem_hero?: string;
+  texto_historia?: string;
+  imagem_historia_1?: string;
+  imagem_historia_2?: string;
+  data_limite_rsvp?: string;
+  titulo_cerimonial?: string;
+  subtitulo_cerimonial?: string;
+  imagem_cerimonia?: string;
+  cerimonia_data?: string;
+  cerimonia_hora?: string;
+  hora_cerimonia?: string;
+  cerimonia_local?: string;
+  local_cerimonia?: string;
+  cerimonia_mapa_url?: string;
+  imagem_recepcao?: string;
+  festa_data?: string;
+  festa_hora?: string;
+  hora_recepcao?: string;
+  festa_local?: string;
+  local_recepcao?: string;
+  festa_mapa_url?: string;
+};
+
 async function getCasamentoData() {
   const { data: config } = await getSupabaseAdmin()
     .from("configuracoes")
@@ -23,7 +53,7 @@ async function getCasamentoData() {
     .order("created_at", { ascending: true });
 
   return { 
-    config: config || {}, 
+    config: (config as WeddingConfig | null) ?? {}, 
     presentes: presentes || [] 
   };
 }
