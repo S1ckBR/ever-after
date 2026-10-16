@@ -55,12 +55,17 @@ create policy rsvp_public_insert
   to anon, authenticated
   with check (true);
 
-create policy rsvp_admin_read_delete
+create policy rsvp_admin_select
   on public.rsvp
-  for all
+  for select
   to authenticated
-  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
-  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+create policy rsvp_admin_delete
+  on public.rsvp
+  for delete
+  to authenticated
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 create policy mensagens_public_read_approved
   on public.mensagens
