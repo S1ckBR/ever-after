@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
+    const supabase = getSupabaseAdmin();
     const { presenteId, nomeConvidado, emailConvidado, quantidadeCotas } = await request.json();
 
     // 1. Busca os dados do presente no banco de dados
